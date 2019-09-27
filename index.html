@@ -1,0 +1,64 @@
+<html>
+  <head>
+    <title>Feast</title>
+  </head>
+  <body>
+    <h1>Feast</h1>
+    <div id="gameport"></div>
+
+    <h1>Instructions</h1>
+    <p>
+      <table>
+        <tr>
+          <td>W A S D</td>
+          <td>-</td>
+          <td>Move your character</td>
+        </tr>
+        <tr>
+          <td>Shift</td>
+          <td>-</td>
+          <td>Hold to sprint, sprinting makes you hungry</td>
+        </tr>
+        <tr>
+          <td><img src="Enemy.png" alt="Enemy"></td>
+          <td>-</td>
+          <td>Avoid hungry predators</td>
+        </tr>
+        <tr>
+          <td><img src="FoodBud.png" alt="FoodBud">
+              <img src="FoodRipe.png" alt="FoodRipe"></td>
+          <td>-</td>
+          <td>Eat food to stay alive</td>
+        </tr>
+        <tr>
+          <td><img src="FoodRot.png" alt="FoodRot"></td>
+          <td>-</td>
+          <td>Avoid rotten food</td>
+        </tr>
+      </table>
+    </p>
+    <p>
+      See how long you can survive
+    </p>
+    <p>
+      Refresh the page to start another game
+    </p>
+
+    <script src="pixi.min.js"></script>
+    <script>PIXI.utils.skipHello();</script>
+    <script src="game.js"></script>
+
+    <div id="disqus_thread"></div>
+    <script>
+    (function() {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://nau-cs413.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+    </script>
+
+
+
+  </body>
+</html>
