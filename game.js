@@ -29,6 +29,8 @@ const FOODBUD = 0;
 const FOODRIPE = 1;
 const FOODROT = 2;
 
+
+
 // -------------------- Main code --------------------
 
 // ---------- Define global variables
@@ -43,12 +45,16 @@ var dDown = false;
 
 // global arrays to store references to game Objects
 // these will be filled, emptied, and modified as new screens are loaded
+var player;
 var maxFoods = 30;
 var foods = [];
-var maxEnemies = 2;
+var maxEnemies = 0;
 var enemies = [];
 var maxDecorations = 10;
 var decorations = [];
+
+// a reference to the spritesheet which will be updated as new screens are loaded
+var sheet;
 
 // global cycle used to change food objects
 var foodProgress = Math.random() * 100;
@@ -61,10 +67,146 @@ gameport.appendChild(renderer.view);
 
 var stage = new PIXI.Container();
 
-// -------------------- Textures --------------------
-// Load sprite sheet with global game sprites on it
-// This includes player, foods, and menu screens
-PIXI.loader.add("GameAssets.json").add("PlainsAssets.json").load();
+
+
+// -------------------- Main PIXI Containers --------------------
+// Create the main states of the game and add them to the stage
+
+console.log("Start container definition");
+
+// ---------- Start screen
+var title = new PIXI.Container();
+stage.addChild(title);
+
+// Create title screen sprite
+var titleSprite = new PIXI.Sprite( PIXI.Texture.fromFrame("GameTitle.png") );
+titleSprite.anchor.set(0.5);
+titleSprite.position.x = 300;
+titleSprite.position.y = 300;
+
+title.addChild(titleSprite);
+
+// ---------- Help screen
+var help = new PIXI.Container();
+help.visible = false;
+stage.addChild(help);
+
+// ---------- Main game screen
+var game = new PIXI.Container();
+game.visible = false;
+stage.addChild(game);
+
+// ---------- Gameover screen
+var gameover = new PIXI.Container();
+gameover.visible = false;
+stage.addChild(gameover);
+
+// Create gameover screen sprite
+var gameoverSprite = new PIXI.Sprite( PIXI.Texture.from("GameOver.png") );
+gameoverSprite.anchor.set(0.5);
+gameoverSprite.position.x = 300;
+gameoverSprite.position.y = 300;
+
+// Clicking on the game over page should return user to the title screen.
+// Enable and attatch mouse handler
+gameoverSprite.interactive = true;
+gameoverSprite.on('click', loadTitle );
+
+gameover.addChild(gameoverSprite);
+
+// Create help screen sprite
+var helpSprite = new PIXI.Sprite( PIXI.Texture.fromFrame("GameHelp.png") );
+helpSprite.anchor.set(0.5);
+helpSprite.position.x = 300;
+helpSprite.position.y = 300;
+
+// Clicking on the help page should return user to the title screen.
+// Enable and attatch mouse handler
+helpSprite.interactive = true;
+helpSprite.on('click', loadTitle );
+
+help.addChild(helpSprite);
+
+
+
+console.log("Finish container definition");
+
+
+// -------------------- Initialization --------------------
+
+// Load sprite sheet with all game's sprites
+PIXI.loader.add("Assets.json").load( initializeSprites );
+
+// Create the sprites that will be used in every biome
+function initializeSprites()
+{
+  sheet = PIXI.loader.resources["Assets.json"];
+
+  // The main screen will always have the player and food, so add those now
+
+  // populate decorations array with decorations that will be given a new texture
+  // each time a level is loaded
+  for( let index = 0; index < maxDecorations; index++ )
+  {
+    // create decoration sprite with a placeholder texture
+    var dec = new PIXI.Sprite( sheet.textures["FoodBud.png"] );
+    decorations.push( dec );
+    game.addChild( dec );
+  }
+
+  // populate food array with food
+  for( let index = 0; index < maxFoods; index++ )
+  {
+    // create a new sprite of sligthly variable size
+    var food = new PIXI.Sprite( sheet.textures["FoodBud.png"] );
+    food.anchor.set(0.5);
+    food.scale.set(0.8 + Math.random() * 0.4);
+
+    // scatter them
+    food.x = Math.random() * renderer.width;
+    food.y = Math.random() * renderer.height;
+
+    // create object to store Sprite and lifecycle
+    let foodObj = new Food( food );
+
+    foods.push( foodObj );
+    game.addChild( food );
+  }
+
+  player = new Player();
+  player.player.position.x = 300;
+  player.player.position.y = 300;
+  game.addChild(player.player);
+
+  // Add buttons to the title screen
+  var startButton = new PIXI.Sprite( sheet.textures["StartButton.png"] );
+  startButton.anchor.set(0.5);
+  startButton.position.x = 300;
+  startButton.position.y = 150;
+
+  // Enable and attatch mouse handler
+  startButton.interactive = true;
+  startButton.buttonMode = true;
+
+  startButton.on('click', loadRandom );
+
+  title.addChild( startButton );
+
+  var helpButton = new PIXI.Sprite( sheet.textures["HelpButton.png"] );
+  helpButton.anchor.set(0.5);
+  helpButton.position.x = 300;
+  helpButton.position.y = 450;
+
+  // Enable and attatch mouse handler
+  helpButton.interactive = true;
+  helpButton.buttonMode = true;
+
+  helpButton.on('click', loadHelp );
+
+  title.addChild( helpButton );
+}
+
+
 
 // -------------------- Objects --------------------
 
@@ -73,9 +215,11 @@ function Player() {
   // Create player scene graph
   this.player = new PIXI.Container();
   // Create sprites with textures from spritesheet
-  this.player_body = new PIXI.Sprite( PIXI.Texture.fromFrame("Game/PlayerBody.png") );
+  this.player_body = new PIXI.Sprite( sheet.textures["PlayerBody.png"] );
+  //this.player_body = new PIXI.Sprite( playerBody );
   this.player_body.anchor.set(0.5);
-  this.player_legs = new PIXI.Sprite( PIXI.Texture.fromFrame("Game/PlayerLegs.png") );
+  this.player_legs = new PIXI.Sprite( sheet.textures["PlayerLegs.png"] );
+  //this.player_legs = new PIXI.Sprite( playerLegs );
   this.player_legs.anchor.set(0.5);
   this.player.addChild( this.player_legs );
   this.player.addChild( this.player_body );
@@ -96,11 +240,11 @@ function PlainsEnemy() {
   // Create enemy scene graph
   this.enemy = new PIXI.Container();
   // Create sprites with textures from spritesheet
-  this.enemy_body = new PIXI.Sprite( PIXI.Texture.fromFrame("Plains/EnemyBody.png") );
+  this.enemy_body = new PIXI.Sprite( sheet.textures["EnemyBody.png"] );
   this.enemy_body.anchor.set(0.5);
-  this.enemy_tendrils_a = new PIXI.Sprite( PIXI.Texture.fromFrame("Plains/EnemyTendrils.png") );
+  this.enemy_tendrils_a = new PIXI.Sprite( sheet.textures["EnemyTendrils.png"] );
   this.enemy_tendrils_a.anchor.set(0.5);
-  this.enemy_tendrils_b = new PIXI.Sprite( PIXI.Texture.fromFrame("Plains/EnemyTendrils.png") );
+  this.enemy_tendrils_b = new PIXI.Sprite( sheet.textures["EnemyTendrils.png"] );
   this.enemy_tendrils_b.anchor.set(0.5);
   this.enemy_tendrils_b.rotation = 45 * DEGTORAD;
   this.enemy.addChild( this.enemy_tendrils_a );
@@ -114,86 +258,57 @@ function PlainsEnemy() {
   this.targetAngle = null;
 }
 
-// -------------------- Main PIXI Containers --------------------
-// Create the main states of the game and add them to the stage
 
-// ---------- Start screen
-var title = new PIXI.Container();
-title.visible = false;
-stage.addChild(title);
-
-// Create title screen sprite
-titleSprite = new PIXI.Sprite( PIXI.Texture.fromFrame("Game/GameOver.png") );
-titleSprite.anchor.set(0.5);
-titleSprite.position.x = 300;
-titleSprite.position.y = 300;
-
-title.addChild(titleSprite);
-
-// ---------- Help screen
-
-// ---------- Main game screen
-var game = new PIXI.Container();
-stage.addChild(game);
-
-// The main screen will always have the player and food, so add those now
-
-// populate decorations array with decorations that will be given a new texture
-// each time a level is loaded
-for( let index = 0; index < maxDecorations; index++ )
-{
-  // create decoration sprite with a placeholder texture
-  var dec = new PIXI.Sprite( PIXI.Texture.fromFrame("Game/FoodBud.png") );
-  decorations.push( dec );
-  game.addChild( dec );
-}
-
-// populate food array with food
-for( let index = 0; index < maxFoods; index++ )
-{
-  // create a new sprite of sligthly variable size
-  var food = new PIXI.Sprite( PIXI.Texture.fromFrame("Game/FoodBud.png") );
-  food.anchor.set(0.5);
-  food.scale.set(0.8 + Math.random() * 0.4);
-
-  // scatter them
-  food.x = Math.random() * renderer.width;
-  food.y = Math.random() * renderer.height;
-
-  // create object to store Sprite and lifecycle
-  let foodObj = new Food( food );
-
-  foods.push( foodObj );
-  game.addChild( food );
-}
-
-var player = new Player();
-player.player.position.x = 300;
-player.player.position.y = 300;
-game.addChild(player.player);
-
-// ---------- Gameover screen
-var gameover = new PIXI.Container();
-gameover.visible = false;
-stage.addChild(gameover);
-
-// Create gameover screen sprite
-gameoverSprite = new PIXI.Sprite( PIXI.Texture.fromFrame("Game/GameOver.png") );
-gameoverSprite.anchor.set(0.5);
-gameoverSprite.position.x = 300;
-gameoverSprite.position.y = 300;
-
-gameover.addChild(gameoverSprite);
 
 // -------------------- Define Functions --------------------
 
-// ---------- Spritesheet loading functions
-
-
 // ---------- Screen loading functions
-function addDecorations()
+function loadTitle()
 {
+  console.log("Loading title");
+  title.visible = true;
+  help.visible = false;
+  game.visible = false;
+  gameover.visible = false;
+}
 
+function loadHelp()
+{
+  console.log("Loading help");
+  title.visible = false;
+  help.visible = true;
+  game.visible = false;
+  gameover.visible = false;
+}
+
+function loadRandom()
+{
+  console.log("Loading random stage");
+  // Load one of the three biomes at random
+  loadPlains();
+
+  title.visible = false;
+  help.visible = false;
+  game.visible = true;
+  gameover.visible = false;
+}
+
+function loadPlains()
+{
+  console.log("Loading plains");
+  // Load the plains biome
+
+  // Add decorations
+  addPlainsDecorations();
+
+  // Scatter food
+  scatterFood();
+
+  // Center player
+  centerPlayer();
+
+  // Add enemeis
+  addPlainsEnemies();
 }
 
 function scatterFood()
@@ -214,17 +329,26 @@ function scatterFood()
   }
 }
 
-function addPlayer()
+function centerPlayer()
 {
-
+  // Recenter the player every time a new screen is loaded
+  player.player.position.x = 300;
+  player.player.position.y = 300;
 }
 
 function addPlainsEnemies()
 {
-  // Clear enemy array of all previous enemy objects
-  enemies.length = 0;
+  // Clear enemy array of all previous enemy sprites
+  for( let index = 0; index < maxEnemies; index++ )
+  {
+    game.removeChild( enemies[ index ].enemy );
+  }
 
-  for( let index = 0; index < maxEnemies; index++)
+  // Reinitialize global variables for plains
+  enemies = [];
+  maxEnemies = 2;
+
+  for( let index = 0; index < maxEnemies; index++ )
   {
     var enemyObj = new PlainsEnemy();
 
@@ -250,7 +374,7 @@ function addPlainsDecorations()
     var frame = Math.ceil( Math.random() * 4 );
 
     // pick a random frame of PlainsDecorations
-    dec.texture = PIXI.Texture.fromFrame("Plains/PlainsDecoration" +  frame  + ".png");
+    dec.texture = sheet.textures["PlainsDecoration" +  frame  + ".png"];
 
     // resize them
     dec.anchor.set(0.5);
@@ -261,33 +385,6 @@ function addPlainsDecorations()
     dec.y = Math.random() * renderer.height;
   }
 }
-
-function loadPlains()
-{
-    // Drop previous spritesheets
-    PIXI.loader.reset();
-    PIXI.utils.clearTextureCache()
-
-    // Load spritesheets needed for plains biome
-    PIXI.loader.add("GameAssets.json").add("PlainsAssets.json").load();
-
-    // Set global variables for plains
-    maxEnemies = 2;
-
-    // Add decorations
-    addPlainsDecorations();
-
-    // Scatter food
-    scatterFood();
-
-    // Add player
-
-    // Add enemeis
-    addPlainsEnemies();
-}
-
-// For now, just load the plains biome
-loadPlains();
 
 // ---------- Input handlers
 function keydownEventHandler(e)
@@ -409,7 +506,7 @@ function progressFoods()
           // Respawn eaten foods
           case FOODEATEN:
             // Recreate the sprite as a new bud and scatter
-            sprite.texture = PIXI.Texture.fromFrame("Game/FoodBud.png");
+            sprite.texture = sheet.textures["FoodBud.png"];
             sprite.scale.set(0.8 + Math.random() * 0.4);
             sprite.x = Math.random() * renderer.width;
             sprite.y = Math.random() * renderer.height;
@@ -418,20 +515,20 @@ function progressFoods()
 
           // Bud to ripe
           case FOODBUD:
-            sprite.texture = PIXI.Texture.fromFrame("Game/FoodRipe.png");
+            sprite.texture = sheet.textures["FoodRipe.png"];
             foods[index].cycle += 1;
           break;
 
           // Ripe to rot
           case FOODRIPE:
-            sprite.texture = PIXI.Texture.fromFrame("Game/FoodRot.png");
+            sprite.texture = sheet.textures["FoodRot.png"];
             foods[index].cycle += 1;
           break;
 
           // Remove rot, create new bud
           case FOODROT:
             // Recreate the sprite as a new bud and scatter
-            sprite.texture = PIXI.Texture.fromFrame("Game/FoodBud.png");
+            sprite.texture = sheet.textures["FoodBud.png"];
             sprite.scale.set(0.8 + Math.random() * 0.4);
             sprite.x = Math.random() * renderer.width;
             sprite.y = Math.random() * renderer.height;
@@ -575,7 +672,7 @@ function handleCollision()
         player.belly = 600;
       }
 
-      foods[ index ].sprite.texture = PIXI.Texture.fromFrame("Game/FoodEaten.png");
+      foods[ index ].sprite.texture = sheet.textures["FoodEaten.png"];
       foods[ index ].cycle = FOODEATEN;
     }
 
@@ -611,6 +708,8 @@ function boundObjects()
   }
 }
 
+
+
 // -------------------- Main game loop --------------------
 function gameLoop()
 {
@@ -618,7 +717,7 @@ function gameLoop()
   {
     requestAnimationFrame(gameLoop);
 
-    if( game.visible )
+    if( game.visible == true )
     {
       playerBelly();
       handleEnemy();

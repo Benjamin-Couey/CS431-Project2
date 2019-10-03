@@ -132,7 +132,7 @@
             <key>data</key>
             <struct type="DataFile">
                 <key>name</key>
-                <filename>Plains/PlainsAssets.json</filename>
+                <filename>Assets.json</filename>
             </struct>
         </map>
         <key>multiPack</key>
@@ -181,7 +181,40 @@
         </struct>
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
-            <key type="filename">Plains/EnemyBody.png</key>
+            <key type="filename">Assets/Bug1.png</key>
+            <key type="filename">Assets/Bug2.png</key>
+            <key type="filename">Assets/Bug3.png</key>
+            <key type="filename">Assets/Bug4.png</key>
+            <key type="filename">Assets/Bug5.png</key>
+            <key type="filename">Assets/FoodBud.png</key>
+            <key type="filename">Assets/FoodEaten.png</key>
+            <key type="filename">Assets/FoodRipe.png</key>
+            <key type="filename">Assets/FoodRot.png</key>
+            <key type="filename">Assets/MountainDecoration1.png</key>
+            <key type="filename">Assets/MountainDecoration2.png</key>
+            <key type="filename">Assets/MountainDecoration3.png</key>
+            <key type="filename">Assets/MountainDecoration4.png</key>
+            <key type="filename">Assets/PlainsDecoration1.png</key>
+            <key type="filename">Assets/PlainsDecoration2.png</key>
+            <key type="filename">Assets/PlainsDecoration3.png</key>
+            <key type="filename">Assets/PlainsDecoration4.png</key>
+            <key type="filename">Assets/SwampDecoration1.png</key>
+            <key type="filename">Assets/SwampDecoration2.png</key>
+            <key type="filename">Assets/SwampDecoration3.png</key>
+            <key type="filename">Assets/SwampDecoration4.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>4,4,8,8</rect>
+                <key>scale9Paddings</key>
+                <rect>4,4,8,8</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">Assets/EnemyBody.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -194,7 +227,35 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">Plains/EnemyTendrils.png</key>
+            <key type="filename">Assets/EnemyBody1.png</key>
+            <key type="filename">Assets/EnemyBody2.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>8,7,16,13</rect>
+                <key>scale9Paddings</key>
+                <rect>8,7,16,13</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">Assets/EnemyTail.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>8,2,16,4</rect>
+                <key>scale9Paddings</key>
+                <rect>8,2,16,4</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">Assets/EnemyTendrils.png</key>
+            <key type="filename">Assets/Nest.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -207,26 +268,65 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">Plains/PlainsDecoration1.png</key>
-            <key type="filename">Plains/PlainsDecoration2.png</key>
-            <key type="filename">Plains/PlainsDecoration3.png</key>
-            <key type="filename">Plains/PlainsDecoration4.png</key>
+            <key type="filename">Assets/HelpButton.png</key>
+            <key type="filename">Assets/StartButton.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
                 <key>scale9Enabled</key>
                 <false/>
                 <key>scale9Borders</key>
-                <rect>4,4,8,8</rect>
+                <rect>41,18,83,37</rect>
                 <key>scale9Paddings</key>
-                <rect>4,4,8,8</rect>
+                <rect>41,18,83,37</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">Assets/PlayerBody.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>7,6,14,12</rect>
+                <key>scale9Paddings</key>
+                <rect>7,6,14,12</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">Assets/PlayerLegs.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>8,8,16,16</rect>
+                <key>scale9Paddings</key>
+                <rect>8,8,16,16</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">Assets/SwampPool1.png</key>
+            <key type="filename">Assets/SwampPool2.png</key>
+            <key type="filename">Assets/SwampPool3.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>32,32,64,64</rect>
+                <key>scale9Paddings</key>
+                <rect>32,32,64,64</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
         </map>
         <key>fileList</key>
         <array>
-            <filename>Plains</filename>
+            <filename>Assets</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>
