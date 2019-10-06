@@ -56,6 +56,9 @@ var decorations = [];
 // a reference to the spritesheet which will be updated as new screens are loaded
 var sheet;
 
+// a reference to the main theme's audio file
+var theme;
+
 // global cycle used to change food objects
 var foodProgress = Math.random() * 100;
 
@@ -139,6 +142,13 @@ PIXI.loader.add("Assets.json").load( initializeSprites );
 // Create the sprites that will be used in every biome
 function initializeSprites()
 {
+  theme  = PIXI.sound.Sound.from('MainTheme.mp3');
+  theme.volume = 0.50;
+  theme.play({
+	loop: true
+});
+
+  // Get a reference to the spritesheet
   sheet = PIXI.loader.resources["Assets.json"];
 
   // The main screen will always have the player and food, so add those now
@@ -776,8 +786,8 @@ function handleMountainEnemy()
         {
 
           // Target the player with a lot of variance
-          enemyObj.targetx = player.player.position.x + ( Math.random() - 0.5 ) * 180;
-          enemyObj.targety = player.player.position.y + ( Math.random() - 0.5 ) * 180;
+          enemyObj.targetx = Math.random() * renderer.width;
+          enemyObj.targety = Math.random() * renderer.height;
 
           // Face the target
           enemyObj.enemy.rotation = Math.atan2( enemyObj.targety - enemyObj.enemy.y,
@@ -787,7 +797,7 @@ function handleMountainEnemy()
           // Calculate the duration of the tween from the distance to the player
           // so the enemy will move at a constant speed
           enemyObj.tween = createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
-                                  { x: enemyObj.targetx, y: enemyObj.targety }, dist * 10 );
+                                  { x: enemyObj.targetx, y: enemyObj.targety }, dist * 8 );
         }
 
         // Check if the player is close
@@ -828,7 +838,7 @@ function handleMountainEnemy()
 
       case ENEMYWAIT:
         // Wait for a while
-        if( enemyObj.cycle < 60 )
+        if( enemyObj.cycle < 30 )
         {
           // Spin while waiting
           enemyObj.enemy.rotation += 0.34;
