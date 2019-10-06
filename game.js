@@ -36,7 +36,7 @@ const FOODROT = 2;
 // ---------- Define global variables
 var fps = 60;
 
-var gameState = PLAINS;
+var gameState = TITLE;
 
 var wDown = false;
 var aDown = false;
@@ -127,9 +127,8 @@ helpSprite.on('click', loadTitle );
 
 help.addChild(helpSprite);
 
-
-
 console.log("Finish container definition");
+
 
 
 // -------------------- Initialization --------------------
@@ -215,14 +214,12 @@ function Player() {
   // Create player scene graph
   this.player = new PIXI.Container();
   // Create sprites with textures from spritesheet
-  this.player_body = new PIXI.Sprite( sheet.textures["PlayerBody.png"] );
-  //this.player_body = new PIXI.Sprite( playerBody );
-  this.player_body.anchor.set(0.5);
-  this.player_legs = new PIXI.Sprite( sheet.textures["PlayerLegs.png"] );
-  //this.player_legs = new PIXI.Sprite( playerLegs );
-  this.player_legs.anchor.set(0.5);
-  this.player.addChild( this.player_legs );
-  this.player.addChild( this.player_body );
+  this.playerBody = new PIXI.Sprite( sheet.textures["PlayerBody.png"] );
+  this.playerBody.anchor.set(0.5);
+  this.playerLegs = new PIXI.Sprite( sheet.textures["PlayerLegs.png"] );
+  this.playerLegs.anchor.set(0.5);
+  this.player.addChild( this.playerLegs );
+  this.player.addChild( this.playerBody );
 
   this.sprinting = false;
   this.rotfactor = 1;
@@ -240,16 +237,16 @@ function PlainsEnemy() {
   // Create enemy scene graph
   this.enemy = new PIXI.Container();
   // Create sprites with textures from spritesheet
-  this.enemy_body = new PIXI.Sprite( sheet.textures["EnemyBody.png"] );
-  this.enemy_body.anchor.set(0.5);
-  this.enemy_tendrils_a = new PIXI.Sprite( sheet.textures["EnemyTendrils.png"] );
-  this.enemy_tendrils_a.anchor.set(0.5);
-  this.enemy_tendrils_b = new PIXI.Sprite( sheet.textures["EnemyTendrils.png"] );
-  this.enemy_tendrils_b.anchor.set(0.5);
-  this.enemy_tendrils_b.rotation = 45 * DEGTORAD;
-  this.enemy.addChild( this.enemy_tendrils_a );
-  this.enemy.addChild( this.enemy_tendrils_b );
-  this.enemy.addChild( this.enemy_body );
+  this.enemyBody = new PIXI.Sprite( sheet.textures["EnemyBody.png"] );
+  this.enemyBody.anchor.set(0.5);
+  this.enemyTendrilsA = new PIXI.Sprite( sheet.textures["EnemyTendrils.png"] );
+  this.enemyTendrilsA.anchor.set(0.5);
+  this.enemyTendrilsB = new PIXI.Sprite( sheet.textures["EnemyTendrils.png"] );
+  this.enemyTendrilsB.anchor.set(0.5);
+  this.enemyTendrilsB.rotation = 45 * DEGTORAD;
+  this.enemy.addChild( this.enemyTendrilsA );
+  this.enemy.addChild( this.enemyTendrilsB );
+  this.enemy.addChild( this.enemyBody );
 
   this.state = ENEMYSEEK;
   this.cycle = 0;
@@ -258,9 +255,40 @@ function PlainsEnemy() {
   this.targetAngle = null;
 }
 
+// ---------- MountainEnemy
+function MountainEnemy() {
+  // Create enemy scene graph
+  this.enemy = new PIXI.Container();
+  // Create animation with textures from spritesheet
+  var frames = [];
+  for( let index = 1; index < 6; index++ )
+  {
+    frames.push( sheet.textures["Bug" + index + ".png"] );
+  }
+  this.enemyBody = new PIXI.AnimatedSprite( frames );
+  this.enemyBody.anchor.set(0.5);
+  this.enemyBody.animationSpeed = 0.5;
+  this.enemyBody.play();
+  this.enemy.addChild( this.enemyBody );
+
+  this.state = ENEMYSEEK;
+  this.cycle = 0;
+  this.targetx = null;
+  this.targety = null;
+  this.tween = null;
+}
+
 
 
 // -------------------- Define Functions --------------------
+
+// ---------- Helper functions
+
+// Calculates the distance in pixles between two given points
+function distance( x1, y1, x2, y2)
+{
+  return Math.sqrt( Math.pow( x1 - x2, 2 ) + Math.pow( y1 - y2, 2 ) );
+}
 
 // ---------- Screen loading functions
 function loadTitle()
@@ -270,6 +298,7 @@ function loadTitle()
   help.visible = false;
   game.visible = false;
   gameover.visible = false;
+  gameState = TITLE;
 }
 
 function loadHelp()
@@ -279,13 +308,25 @@ function loadHelp()
   help.visible = true;
   game.visible = false;
   gameover.visible = false;
+  gameState = HELP;
+}
+
+function loadGameover()
+{
+  console.log("Loading gameover");
+  title.visible = false;
+  help.visible = false;
+  game.visible = false;
+  gameover.visible = true;
+  gameState = OVER;
 }
 
 function loadRandom()
 {
   console.log("Loading random stage");
   // Load one of the three biomes at random
-  loadPlains();
+  loadMountains();
+  gameState = MOUNTAINS;
 
   title.visible = false;
   help.visible = false;
@@ -298,8 +339,10 @@ function loadPlains()
   console.log("Loading plains");
   // Load the plains biome
 
+  renderer.backgroundColor = 0xa66407;
+
   // Add decorations
-  addPlainsDecorations();
+  addDecorations( PLAINS );
 
   // Scatter food
   scatterFood();
@@ -311,6 +354,47 @@ function loadPlains()
   addPlainsEnemies();
 }
 
+function loadMountains()
+{
+  console.log("Loading mountains");
+  // Load the mountains biome
+
+  renderer.backgroundColor = 0xad8349;
+
+  // Add decorations
+  addDecorations( MOUNTAINS );
+
+  // Scatter food
+  scatterFood();
+
+  // Center player
+  centerPlayer();
+
+  // Add enemeis
+  addMountainEnemies();
+}
+
+function loadSwamps()
+{
+  console.log("Loading plains");
+  // Load the plains biome
+
+  renderer.backgroundColor = 0x94611a;
+
+  // Add decorations
+  addDecorations( SWAMP );
+
+  // Scatter food
+  scatterFood();
+
+  // Center player
+  centerPlayer();
+
+  // Add enemeis
+  addPlainsEnemies();
+}
+
+// ---------- Loading helper functions
 function scatterFood()
 {
   // Rescatter the food every time a new screen is loaded
@@ -318,6 +402,10 @@ function scatterFood()
   {
     // load the existing sprites
     var foodObj = foods[ index ];
+
+    // reset them to buds
+    foodObj.sprite.texture = sheet.textures["FoodBud.png"];
+    foodObj.cycle = FOODBUD;
 
     // resize them
     foodObj.sprite.anchor.set(0.5);
@@ -363,8 +451,53 @@ function addPlainsEnemies()
   }
 }
 
-function addPlainsDecorations()
+function addMountainEnemies()
 {
+  // Clear enemy array of all previous enemy sprites
+  for( let index = 0; index < maxEnemies; index++ )
+  {
+    game.removeChild( enemies[ index ].enemy );
+  }
+
+  // Reinitialize global variables for mountains
+  enemies = [];
+  maxEnemies = 5;
+
+  // Add hive
+
+  for( let index = 0; index < maxEnemies; index++ )
+  {
+    var enemyObj = new MountainEnemy();
+
+    // Place the enemy at a random point on the screen
+    enemyObj.enemy.x = Math.random() * renderer.width;
+    enemyObj.enemy.y = Math.random() * renderer.height;
+
+    //enemyObj.cycle += Math.random() * 100;
+
+    enemies.push( enemyObj );
+    game.addChild( enemyObj.enemy );
+  }
+}
+
+function addDecorations( biome )
+{
+  // Determine which type of decoration to use
+  var decString;
+
+  switch( biome )
+  {
+    case PLAINS:
+      decString = "PlainsDecoration";
+    break;
+    case MOUNTAINS:
+      decString = "MountainDecoration";
+    break;
+    case SWAMP:
+      decString = "SwampDecoration";
+    break;
+  }
+
   for( let index = 0; index < maxDecorations; index++ )
   {
     // load the existing sprites
@@ -373,8 +506,8 @@ function addPlainsDecorations()
     // get a random number between 1 and 4
     var frame = Math.ceil( Math.random() * 4 );
 
-    // pick a random frame of PlainsDecorations
-    dec.texture = sheet.textures["PlainsDecoration" +  frame  + ".png"];
+    // pick a random frame of the decoration
+    dec.texture = sheet.textures[decString +  frame  + ".png"];
 
     // resize them
     dec.anchor.set(0.5);
@@ -464,15 +597,15 @@ function movePlayer()
 
 function animatePlayerLegs( speedFactor )
 {
-  if( player.player_legs.rotation >= 0.3 ) {
+  if( player.playerLegs.rotation >= 0.3 ) {
     player.rotfactor = -1;
   }
 
-  else if( player.player_legs.rotation <= -0.3 ) {
+  else if( player.playerLegs.rotation <= -0.3 ) {
     player.rotfactor = 1;
   }
 
-  player.player_legs.rotation += player.rotfactor * 0.1 * speedFactor / 10;
+  player.playerLegs.rotation += player.rotfactor * 0.1 * speedFactor / 10;
 }
 
 function playerBelly()
@@ -482,12 +615,11 @@ function playerBelly()
   // If the player's belly is empty, the game is over
   if( player.belly <= 0 )
   {
-    game.visible = false;
-    gameover.visible = true;
+    loadGameover();
   }
 
   // Scale player based on their belly.
-  player.player_body.scale.set( 0.8 + 0.4 * ( player.belly / 600 ) );
+  player.playerBody.scale.set( 0.8 + 0.4 * ( player.belly / 600 ) );
 }
 
 function progressFoods()
@@ -546,7 +678,7 @@ function progressFoods()
 }
 
 // ---------- PlainsEnemy functions
-function handleEnemy()
+function handlePlainsEnemy()
 {
   for( let index = 0; index < maxEnemies; index++)
   {
@@ -595,7 +727,7 @@ function handleEnemy()
   }
 }
 
-function moveEnemy()
+function movePlainsEnemy()
 {
   for( let index = 0; index < maxEnemies; index++)
   {
@@ -605,8 +737,8 @@ function moveEnemy()
       case ENEMYSEEK:
         // Rotate the enemy
         enemyObj.enemy.rotation -= 0.01;
-        enemyObj.enemy_tendrils_a.rotation += 0.025;
-        enemyObj.enemy_tendrils_b.rotation += 0.025;
+        enemyObj.enemyTendrilsA.rotation += 0.025;
+        enemyObj.enemyTendrilsB.rotation += 0.025;
         // Move towards the target
         enemyObj.enemy.x += 1 * Math.cos( enemyObj.targetAngle );
         enemyObj.enemy.y += 1 * Math.sin( enemyObj.targetAngle );
@@ -614,13 +746,102 @@ function moveEnemy()
       case ENEMYWAIT:
         // Rotate the enemy
         enemyObj.enemy.rotation -= 0.01;
-        enemyObj.enemy_tendrils_a.rotation += 0.025;
-        enemyObj.enemy_tendrils_b.rotation -= 0.025;
+        enemyObj.enemyTendrilsA.rotation += 0.025;
+        enemyObj.enemyTendrilsB.rotation -= 0.025;
       break;
       case ENEMYCHARGE:
         // Move towards the target
         enemyObj.enemy.x += 12 * Math.cos( enemyObj.targetAngle );
         enemyObj.enemy.y += 12 * Math.sin( enemyObj.targetAngle );
+      break;
+    }
+  }
+}
+
+// ---------- MountainEnemy functions
+function handleMountainEnemy()
+{
+  for( let index = 0; index < maxEnemies; index++)
+  {
+    var enemyObj = enemies[index];
+
+    switch ( enemyObj.state )
+    {
+      case ENEMYSEEK:
+        // Calculate the distance to the player
+        var dist = distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y );
+
+        // Get a new tween if not currently doing a tween
+        if( enemyObj.tween == null || !createjs.Tween.hasActiveTweens( enemyObj.enemy.position ) )
+        {
+
+          // Target the player with a lot of variance
+          enemyObj.targetx = player.player.position.x + ( Math.random() - 0.5 ) * 180;
+          enemyObj.targety = player.player.position.y + ( Math.random() - 0.5 ) * 180;
+
+          // Face the target
+          enemyObj.enemy.rotation = Math.atan2( enemyObj.targety - enemyObj.enemy.y,
+                                             enemyObj.targetx - enemyObj.enemy.x );
+
+          // Tween towards the target
+          // Calculate the duration of the tween from the distance to the player
+          // so the enemy will move at a constant speed
+          enemyObj.tween = createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
+                                  { x: enemyObj.targetx, y: enemyObj.targety }, dist * 10 );
+        }
+
+        // Check if the player is close
+        if( dist < 80 )
+        {
+          // Set every mountain enemy to charge
+          for( let index = 0; index < maxEnemies; index++)
+          {
+            var enemyObj = enemies[ index ];
+
+            // Target the player with some variance
+            enemyObj.targetx = player.player.position.x + ( Math.random() - 0.5 ) * 30;
+            enemyObj.targety = player.player.position.y + ( Math.random() - 0.5 ) * 30;
+
+            // Face the target
+            enemyObj.enemy.rotation = Math.atan2( enemyObj.targety - enemyObj.enemy.y,
+                                               enemyObj.targetx - enemyObj.enemy.x );
+
+            // Tween towards the target
+            // Multipy distance by a smaller number to cause enemy to move faster
+            enemyObj.tween = createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
+                                    { x: enemyObj.targetx, y: enemyObj.targety },
+                                    distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y ) * 5 );
+
+            enemyObj.state = ENEMYCHARGE;
+          }
+        }
+      break;
+
+      case ENEMYCHARGE:
+        if( !createjs.Tween.hasActiveTweens( enemyObj.enemy.position ) )
+        {
+          console.log( "Enemy waiting" );
+          // Once tween has finished, start waiting
+          enemyObj.state = ENEMYWAIT;
+        }
+      break;
+
+      case ENEMYWAIT:
+        // Wait for a while
+        if( enemyObj.cycle < 60 )
+        {
+          // Spin while waiting
+          enemyObj.enemy.rotation += 0.34;
+
+          enemyObj.cycle += 1;
+        }
+        else
+        {
+          console.log( "Enemy seeking" );
+          // Done waiting, go back to seeking
+          enemyObj.cycle = 0;
+          enemyObj.state = ENEMYSEEK
+        }
       break;
     }
   }
@@ -639,18 +860,17 @@ function handleCollision()
   // Check if player has collided with an enemy
   for( let index = 0; index < maxEnemies; index++)
   {
-    if( checkCollision( player.player_body, enemies[ index ].enemy_body ) )
+    // Player collided with an enemy, the game is over
+    if( checkCollision( player.playerBody, enemies[ index ].enemyBody ) )
     {
-      // Player collided with an enemy, the game is over
-      game.visible = false;
-      gameover.visible = true;
+      loadGameover();
     }
   }
 
   // Check if player has collided with a food
   for( let index = 0; index < maxFoods; index++)
   {
-    if( checkCollision( player.player_body, foods[ index ].sprite ) && foods[ index ].cycle != FOODEATEN )
+    if( checkCollision( player.playerBody, foods[ index ].sprite ) && foods[ index ].cycle != FOODEATEN )
     {
       // Player collided with the food, it should be eaten and increase the player's belly
       switch( foods[ index ].cycle )
@@ -659,7 +879,7 @@ function handleCollision()
           player.belly += 20;
         break;
         case FOODRIPE:
-          player.belly += 30;
+          player.belly += 40;
         break;
         case FOODROT:
           player.belly -= 10;
@@ -720,8 +940,18 @@ function gameLoop()
     if( game.visible == true )
     {
       playerBelly();
-      handleEnemy();
-      moveEnemy();
+
+      switch( gameState )
+      {
+        case PLAINS:
+          handlePlainsEnemy();
+          movePlainsEnemy();
+        break;
+        case MOUNTAINS:
+          handleMountainEnemy();
+        break;
+      }
+
       progressFoods();
       movePlayer();
       handleCollision();
