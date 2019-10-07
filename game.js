@@ -1,4 +1,6 @@
 // -------------------- Define Constants --------------------
+
+// Keycodes
 const WKEY = 87;
 const AKEY = 65;
 const SKEY = 83;
@@ -6,8 +8,10 @@ const DKEY = 68;
 const SPACE = 32;
 const SHIFT = 16;
 
+// Multiply to convert an angle in degrees to radians
 const DEGTORAD = Math.PI/180;
 
+// Game states
 const TITLE = 0;
 const HELP = 1;
 const PLAINS = 2;
@@ -15,15 +19,18 @@ const MOUNTAINS = 3;
 const SWAMP = 4;
 const OVER =  5;
 
+// Player movement states
 const PLAYERWALK = 5;
 const PLAYERSPRINT = 10;
 const PLAYERTURN = 0.17;
 const PLAYERPOORTURN = 0.05;
 
+// Enemy states
 const ENEMYSEEK = 0;
 const ENEMYWAIT = 1;
 const ENEMYCHARGE = 2;
 
+// Food states
 const FOODEATEN = -1;
 const FOODBUD = 0;
 const FOODRIPE = 1;
@@ -36,8 +43,11 @@ const FOODROT = 2;
 // ---------- Define global variables
 var fps = 60;
 
+// The game's state which will track which screen the game is one as well as
+// determine which functions are run during the game loop
 var gameState = TITLE;
 
+// Global variables to track which key(s) are being pressed
 var wDown = false;
 var aDown = false;
 var sDown = false;
@@ -136,22 +146,23 @@ console.log("Finish container definition");
 
 // -------------------- Initialization --------------------
 
+console.log("Start initialization");
+
 // Load sprite sheet with all game's sprites
 PIXI.loader.add("Assets.json").load( initializeSprites );
 
 // Create the sprites that will be used in every biome
+// The large title, help, and game over screen sprites are bigger than this whole
+// sheet and so are loaded seperately.
 function initializeSprites()
 {
+  // Load the main theme for the game and start it playing on loop
   theme  = PIXI.sound.Sound.from('MainTheme.mp3');
   theme.volume = 0.50;
-  theme.play({
-	loop: true
-});
+  theme.play( { loop: true } );
 
   // Get a reference to the spritesheet
   sheet = PIXI.loader.resources["Assets.json"];
-
-  // The main screen will always have the player and food, so add those now
 
   // populate decorations array with decorations that will be given a new texture
   // each time a level is loaded
@@ -163,7 +174,8 @@ function initializeSprites()
     game.addChild( dec );
   }
 
-  // populate food array with food
+  // populate food array with food that will be given new textures as the game
+  // goes on
   for( let index = 0; index < maxFoods; index++ )
   {
     // create a new sprite of sligthly variable size
@@ -182,6 +194,7 @@ function initializeSprites()
     game.addChild( food );
   }
 
+  // Create and center the main player's sprite
   player = new Player();
   player.player.position.x = 300;
   player.player.position.y = 300;
@@ -213,6 +226,8 @@ function initializeSprites()
   helpButton.on('click', loadHelp );
 
   title.addChild( helpButton );
+
+  console.log("Finish initialization");
 }
 
 
@@ -231,14 +246,20 @@ function Player() {
   this.player.addChild( this.playerLegs );
   this.player.addChild( this.playerBody );
 
+  // Flag to track if the player is sprinting
   this.sprinting = false;
+
+  // Factor which determines how well the player can turn
   this.rotfactor = 1;
+
+  // Decementing counter that is refilled by eating food
   this.belly = 600;
 }
 
 // ---------- Food
 function Food( sprite ) {
   this.sprite = sprite;
+  // Variable to track which sprite the food object is currently using
   this.cycle = FOODBUD;
 }
 
@@ -281,11 +302,33 @@ function MountainEnemy() {
   this.enemyBody.play();
   this.enemy.addChild( this.enemyBody );
 
+  this.state = ENEMYWAIT;
+  this.cycle = 0;
+  this.targetx = null;
+  this.targety = null;
+}
+
+// ---------- SwampEnemy
+function SwampEnemy() {
+  // Create enemy scene graph
+  this.enemy = new PIXI.Container();
+
+  // The enemy starts hidden
+  this.enemyBody = new PIXI.Sprite( sheet.textures["EnemyBody0.png"] );
+  this.enemyBody.anchor.set(0.5);
+  this.enemyTendrilsA = new PIXI.Sprite( sheet.textures["EnemyTail.png"] );
+  this.enemyTendrilsA.anchor.set(1,0.5);
+  this.enemyTendrilsB = new PIXI.Sprite( sheet.textures["EnemyTail.png"] );
+  this.enemyTendrilsB.anchor.set(1,0.5);
+
+  this.enemy.addChild( this.enemyTendrilsA );
+  this.enemy.addChild( this.enemyTendrilsB );
+  this.enemy.addChild( this.enemyBody );
+
   this.state = ENEMYSEEK;
   this.cycle = 0;
   this.targetx = null;
   this.targety = null;
-  this.tween = null;
 }
 
 
@@ -335,8 +378,24 @@ function loadRandom()
 {
   console.log("Loading random stage");
   // Load one of the three biomes at random
-  loadMountains();
-  gameState = MOUNTAINS;
+
+  // Get a random number between 1 and 3, then add 1 so it corresponds to one of
+  // the level type constants
+  whichStage = Math.ceil( Math.random() * 3 ) + 1;
+
+  switch( whichStage )
+  {
+    case PLAINS:
+      loadPlains();
+      gameState = PLAINS;
+    break;
+    case MOUNTAINS:
+      loadMountains();
+      gameState = MOUNTAINS;
+    break;
+    case SWAMP:
+    break;
+  }
 
   title.visible = false;
   help.visible = false;
@@ -490,6 +549,35 @@ function addMountainEnemies()
   }
 }
 
+function addMountainEnemies()
+{
+  // Clear enemy array of all previous enemy sprites
+  for( let index = 0; index < maxEnemies; index++ )
+  {
+    game.removeChild( enemies[ index ].enemy );
+  }
+
+  // Reinitialize global variables for mountains
+  enemies = [];
+  maxEnemies = 5;
+
+  // Add hive
+
+  for( let index = 0; index < maxEnemies; index++ )
+  {
+    var enemyObj = new MountainEnemy();
+
+    // Place the enemy at a random point on the screen
+    enemyObj.enemy.x = Math.random() * renderer.width;
+    enemyObj.enemy.y = Math.random() * renderer.height;
+
+    //enemyObj.cycle += Math.random() * 100;
+
+    enemies.push( enemyObj );
+    game.addChild( enemyObj.enemy );
+  }
+}
+
 function addDecorations( biome )
 {
   // Determine which type of decoration to use
@@ -532,6 +620,8 @@ function addDecorations( biome )
 // ---------- Input handlers
 function keydownEventHandler(e)
 {
+  // When a key is pressed, update the appropriate global variable to track
+  // the key press
   if (e.keyCode == WKEY) {
     wDown = true;
   }
@@ -551,6 +641,8 @@ function keydownEventHandler(e)
 
 function keyupEventHandler(e)
 {
+  // When a key is released, update the appropriate global variable to track
+  // the key being released
   if (e.keyCode == WKEY) {
     wDown = false;
   }
@@ -739,6 +831,8 @@ function handlePlainsEnemy()
 
 function movePlainsEnemy()
 {
+  // Iterate through the array of plains enemies and move them based upon
+  // their state
   for( let index = 0; index < maxEnemies; index++)
   {
     var enemyObj = enemies[index];
@@ -782,7 +876,7 @@ function handleMountainEnemy()
         var dist = distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y );
 
         // Get a new tween if not currently doing a tween
-        if( enemyObj.tween == null || !createjs.Tween.hasActiveTweens( enemyObj.enemy.position ) )
+        if( !createjs.Tween.hasActiveTweens( enemyObj.enemy.position ) )
         {
 
           // Target the player with a lot of variance
@@ -796,7 +890,7 @@ function handleMountainEnemy()
           // Tween towards the target
           // Calculate the duration of the tween from the distance to the player
           // so the enemy will move at a constant speed
-          enemyObj.tween = createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
+          createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
                                   { x: enemyObj.targetx, y: enemyObj.targety }, dist * 8 );
         }
 
@@ -830,7 +924,6 @@ function handleMountainEnemy()
       case ENEMYCHARGE:
         if( !createjs.Tween.hasActiveTweens( enemyObj.enemy.position ) )
         {
-          console.log( "Enemy waiting" );
           // Once tween has finished, start waiting
           enemyObj.state = ENEMYWAIT;
         }
@@ -847,7 +940,6 @@ function handleMountainEnemy()
         }
         else
         {
-          console.log( "Enemy seeking" );
           // Done waiting, go back to seeking
           enemyObj.cycle = 0;
           enemyObj.state = ENEMYSEEK
@@ -911,6 +1003,7 @@ function handleCollision()
 
 function bound( sprite )
 {
+  // Given a sprite, make sure that it stays within the bounds of the screen
   if( sprite.position.x < 0 )
   {
     sprite.position.x = 0;
@@ -931,6 +1024,7 @@ function bound( sprite )
 
 function boundObjects()
 {
+  // Keep players and enemies from moving off of the screen
   bound( player.player );
   for( let index = 0; index < maxEnemies; index++)
   {
