@@ -57,6 +57,7 @@ var dDown = false;
 // these will be filled, emptied, and modified as new screens are loaded
 var player;
 var maxFoods = 30;
+var eatenFoods = 0;
 var foods = [];
 var maxEnemies = 0;
 var enemies = [];
@@ -158,7 +159,7 @@ function initializeSprites()
 {
   // Load the main theme for the game and start it playing on loop
   theme  = PIXI.sound.Sound.from('MainTheme.mp3');
-  theme.volume = 0.50;
+  theme.volume = 0.33;
   theme.play( { loop: true } );
 
   // Get a reference to the spritesheet
@@ -371,6 +372,12 @@ function loadGameover()
   help.visible = false;
   game.visible = false;
   gameover.visible = true;
+
+  // Reset some variables now that the game is over
+  foodProgress = 0;
+  player.belly = 600;
+  eatenFoods = 0;
+
   gameState = OVER;
 }
 
@@ -381,19 +388,15 @@ function loadRandom()
 
   // Get a random number between 1 and 3, then add 1 so it corresponds to one of
   // the level type constants
-  whichStage = Math.ceil( Math.random() * 3 ) + 1;
+  whichStage = Math.ceil( Math.random() * 2 ) + 1;
 
   switch( whichStage )
   {
     case PLAINS:
       loadPlains();
-      gameState = PLAINS;
     break;
     case MOUNTAINS:
       loadMountains();
-      gameState = MOUNTAINS;
-    break;
-    case SWAMP:
     break;
   }
 
@@ -421,6 +424,9 @@ function loadPlains()
 
   // Add enemeis
   addPlainsEnemies();
+
+  // Upadte game state
+  gameState = PLAINS;
 }
 
 function loadMountains()
@@ -441,6 +447,9 @@ function loadMountains()
 
   // Add enemeis
   addMountainEnemies();
+
+  // Upadte game state
+  gameState = MOUNTAINS;
 }
 
 function loadSwamps()
@@ -461,6 +470,9 @@ function loadSwamps()
 
   // Add enemeis
   addPlainsEnemies();
+
+  // Upadte game state
+  gameState = SWAMP;
 }
 
 // ---------- Loading helper functions
@@ -509,9 +521,10 @@ function addPlainsEnemies()
   {
     var enemyObj = new PlainsEnemy();
 
-    // Place the enemy at a random point on the screen
-    enemyObj.enemy.x = Math.random() * renderer.width;
-    enemyObj.enemy.y = Math.random() * renderer.height;
+    // Place the enemy at a random point on the screen, excepting a square in
+    // the middle so the enemy won't spawn on top of the player
+    enemyObj.enemy.x = Math.ceil( Math.random() * 200 ) + ( Math.round( Math.random() ) * 400 );
+    enemyObj.enemy.y = Math.ceil( Math.random() * 200 ) + ( Math.round( Math.random() ) * 400 );
 
     enemyObj.cycle += Math.random() * 100;
 
@@ -532,46 +545,13 @@ function addMountainEnemies()
   enemies = [];
   maxEnemies = 5;
 
-  // Add hive
-
   for( let index = 0; index < maxEnemies; index++ )
   {
     var enemyObj = new MountainEnemy();
 
     // Place the enemy at a random point on the screen
-    enemyObj.enemy.x = Math.random() * renderer.width;
-    enemyObj.enemy.y = Math.random() * renderer.height;
-
-    //enemyObj.cycle += Math.random() * 100;
-
-    enemies.push( enemyObj );
-    game.addChild( enemyObj.enemy );
-  }
-}
-
-function addMountainEnemies()
-{
-  // Clear enemy array of all previous enemy sprites
-  for( let index = 0; index < maxEnemies; index++ )
-  {
-    game.removeChild( enemies[ index ].enemy );
-  }
-
-  // Reinitialize global variables for mountains
-  enemies = [];
-  maxEnemies = 5;
-
-  // Add hive
-
-  for( let index = 0; index < maxEnemies; index++ )
-  {
-    var enemyObj = new MountainEnemy();
-
-    // Place the enemy at a random point on the screen
-    enemyObj.enemy.x = Math.random() * renderer.width;
-    enemyObj.enemy.y = Math.random() * renderer.height;
-
-    //enemyObj.cycle += Math.random() * 100;
+    enemyObj.enemy.x = Math.ceil( Math.random() * 200 ) + ( Math.round( Math.random() ) * 400 );
+    enemyObj.enemy.y = Math.ceil( Math.random() * 200 ) + ( Math.round( Math.random() ) * 400 );
 
     enemies.push( enemyObj );
     game.addChild( enemyObj.enemy );
@@ -717,6 +697,7 @@ function playerBelly()
   // If the player's belly is empty, the game is over
   if( player.belly <= 0 )
   {
+    console.log("Ran out of food");
     loadGameover();
   }
 
@@ -732,20 +713,16 @@ function progressFoods()
     for( let index = 0; index < maxFoods; index++)
     {
       // Randomly select some foods to advance through their life-cycle
-      if( Math.random() > 0.5 )
+      // Once the player has eaten most of the food, start accellerating the
+      // life cycle so the player isn't waiting on one or two rotten foods to
+      // go to the next level
+      if( Math.random() > 0.5 || eatenFoods >= 20 )
       {
         var sprite = foods[index].sprite
         switch( foods[index].cycle )
         {
-          // Respawn eaten foods
-          case FOODEATEN:
-            // Recreate the sprite as a new bud and scatter
-            sprite.texture = sheet.textures["FoodBud.png"];
-            sprite.scale.set(0.8 + Math.random() * 0.4);
-            sprite.x = Math.random() * renderer.width;
-            sprite.y = Math.random() * renderer.height;
-            foods[index].cycle = FOODBUD;
-          break;
+          // If the foods has been eaten, it shouldn't respawn until the level
+          // reloads
 
           // Bud to ripe
           case FOODBUD:
@@ -757,16 +734,20 @@ function progressFoods()
           case FOODRIPE:
             sprite.texture = sheet.textures["FoodRot.png"];
             foods[index].cycle += 1;
+
           break;
 
-          // Remove rot, create new bud
+          // Remove rot, count it as eaten
           case FOODROT:
-            // Recreate the sprite as a new bud and scatter
-            sprite.texture = sheet.textures["FoodBud.png"];
-            sprite.scale.set(0.8 + Math.random() * 0.4);
-            sprite.x = Math.random() * renderer.width;
-            sprite.y = Math.random() * renderer.height;
-            foods[index].cycle = FOODBUD;
+            sprite.texture = sheet.textures["FoodEaten.png"];
+            foods[index].cycle = FOODEATEN;
+            eatenFoods += 1;
+            // If that was among the last food, move on to the next level
+            if( eatenFoods >= maxFoods - 5 )
+            {
+              eatenFoods = 0;
+              loadRandom();
+            }
           break;
         }
       }
@@ -872,14 +853,12 @@ function handleMountainEnemy()
     switch ( enemyObj.state )
     {
       case ENEMYSEEK:
-        // Calculate the distance to the player
-        var dist = distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y );
 
         // Get a new tween if not currently doing a tween
         if( !createjs.Tween.hasActiveTweens( enemyObj.enemy.position ) )
         {
 
-          // Target the player with a lot of variance
+          // Target a random spot on the screen
           enemyObj.targetx = Math.random() * renderer.width;
           enemyObj.targety = Math.random() * renderer.height;
 
@@ -891,11 +870,12 @@ function handleMountainEnemy()
           // Calculate the duration of the tween from the distance to the player
           // so the enemy will move at a constant speed
           createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
-                                  { x: enemyObj.targetx, y: enemyObj.targety }, dist * 8 );
+                                  { x: enemyObj.targetx, y: enemyObj.targety },
+                                  8 * distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, enemyObj.targetx, enemyObj.targety ) );
         }
 
         // Check if the player is close
-        if( dist < 80 )
+        if( 80 > distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y ) )
         {
           // Set every mountain enemy to charge
           for( let index = 0; index < maxEnemies; index++)
@@ -914,7 +894,7 @@ function handleMountainEnemy()
             // Multipy distance by a smaller number to cause enemy to move faster
             enemyObj.tween = createjs.Tween.get( enemyObj.enemy.position, {override:true} ).to(
                                     { x: enemyObj.targetx, y: enemyObj.targety },
-                                    distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y ) * 5 );
+                                    5 * distance( enemyObj.enemy.position.x, enemyObj.enemy.position.y, player.player.position.x, player.player.position.y ) );
 
             enemyObj.state = ENEMYCHARGE;
           }
@@ -965,6 +945,7 @@ function handleCollision()
     // Player collided with an enemy, the game is over
     if( checkCollision( player.playerBody, enemies[ index ].enemyBody ) )
     {
+      console.log("Got eaten");
       loadGameover();
     }
   }
@@ -994,8 +975,17 @@ function handleCollision()
         player.belly = 600;
       }
 
+      // Actually eat the food and track that it was eaten
       foods[ index ].sprite.texture = sheet.textures["FoodEaten.png"];
       foods[ index ].cycle = FOODEATEN;
+      eatenFoods += 1;
+
+      // If that was among the last food, move on to the next level
+      if( eatenFoods >= maxFoods - 5 )
+      {
+        eatenFoods = 0;
+        loadRandom();
+      }
     }
 
   }
